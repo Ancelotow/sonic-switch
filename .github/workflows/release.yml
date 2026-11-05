@@ -1,0 +1,74 @@
+name: Version et DMG
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Incrément de version
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Vérifier le calcul des versions
+        run: python3 scripts/test-version.py
+      - name: Tester l’application
+        run: zsh scripts/test.sh
+      - name: Incrémenter la version et le numéro de build
+        id: version
+        env:
+          BUMP: ${{ inputs.bump || 'patch' }}
+        run: python3 scripts/bump-version.py "$BUMP"
+      - name: Compiler pour Apple Silicon et Intel
+        run: zsh scripts/build-app.sh --arch arm64 --arch x86_64
+      - name: Créer et vérifier le DMG
+        run: zsh scripts/build-dmg.sh
+      - name: Conserver le DMG même si la publication échoue
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: SonicSwitch-${{ steps.version.outputs.version }}
+          path: |
+            dist/*.dmg
+            dist/*.dmg.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Enregistrer la version et créer le tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/Info.plist
+          git commit -m "chore: release $TAG [skip ci]"
+          git tag -a "$TAG" -m "SonicSwitch $TAG"
+          # Atomic push: if main advanced meanwhile, neither ref is published.
+          git push --atomic origin HEAD:main "refs/tags/$TAG"
+      - name: Publier le DMG dans GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$TAG" dist/*.dmg dist/*.dmg.sha256 \
+            --verify-tag --title "SonicSwitch $TAG" --generate-notes \
+            --notes 'DMG universel pour Mac Apple Silicon et Intel (macOS 13+). Glisser SonicSwitch dans Applications. Application avec signature ad hoc, sans notarisation Apple.'
+          printf '### SonicSwitch %s\n\nDMG : https://github.com/%s/releases/tag/%s\n' "$TAG" "$GH_REPO" "$TAG" >> "$GITHUB_STEP_SUMMARY"

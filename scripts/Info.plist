@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>SonicSwitch</string>
+    <key>CFBundleDisplayName</key><string>SonicSwitch</string>
+    <key>CFBundleIdentifier</key><string>fr.local.SonicSwitch</string>
+    <key>CFBundleExecutable</key><string>SonicSwitch</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>0.1.4</string>
+    <key>CFBundleVersion</key><string>5</string>
+    <key>CFBundleURLTypes</key>
+    <array><dict>
+        <key>CFBundleURLName</key><string>fr.local.SonicSwitch.callback</string>
+        <key>CFBundleURLSchemes</key><array><string>sonicswitch</string></array>
+        <key>CFBundleTypeRole</key><string>Viewer</string>
+    </dict></array>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key><string>13.0</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>NSHumanReadableCopyright</key><string>Application locale personnelle. Sans affiliation à SonicWall.</string>
+</dict>
+</plist>
